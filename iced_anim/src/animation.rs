@@ -53,10 +53,7 @@
 //! ```
 use std::time::Instant;
 
-use iced::{
-    advanced::{widget::Tree, Widget},
-    Element,
-};
+use iced::{advanced::{widget::Tree, Widget}, Element, Rectangle};
 
 use crate::{Animate, Animated, Event};
 
@@ -170,13 +167,14 @@ where
     fn overlay<'b>(
         &'b mut self,
         tree: &'b mut iced::advanced::widget::Tree,
-        layout: iced::advanced::Layout<'_>,
+        layout: iced::advanced::Layout<'b>,
         renderer: &Renderer,
+        viewport: &Rectangle,
         translation: iced::Vector,
     ) -> Option<iced::advanced::overlay::Element<'b, Message, Theme, Renderer>> {
         self.content
             .as_widget_mut()
-            .overlay(&mut tree.children[0], layout, renderer, translation)
+            .overlay(&mut tree.children[0], layout, renderer, viewport, translation)
     }
 
     fn layout(
@@ -211,20 +209,20 @@ where
         )
     }
 
-    fn on_event(
+    fn update(
         &mut self,
         tree: &mut iced::advanced::widget::Tree,
-        event: iced::Event,
+        event: &iced::Event,
         layout: iced::advanced::Layout<'_>,
         cursor: iced::advanced::mouse::Cursor,
         renderer: &Renderer,
         clipboard: &mut dyn iced::advanced::Clipboard,
         shell: &mut iced::advanced::Shell<'_, Message>,
         viewport: &iced::Rectangle,
-    ) -> iced::advanced::graphics::core::event::Status {
-        let status = self.content.as_widget_mut().on_event(
+    ) {
+        self.content.as_widget_mut().update(
             &mut tree.children[0],
-            event.clone(),
+            event,
             layout,
             cursor,
             renderer,
@@ -234,7 +232,7 @@ where
         );
 
         if !self.animated_value.is_animating() {
-            return status;
+            return;
         }
 
         if let Some(on_update) = &self.on_update {
@@ -246,8 +244,6 @@ where
             };
             shell.publish(on_update(event));
         }
-
-        status
     }
 }
 
